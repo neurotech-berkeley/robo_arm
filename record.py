@@ -16,7 +16,8 @@ def main():
     wait_time = 2
     count_time = 3
     fingers = ["THUMB", "POINTER", "MIDDLE", "RING", "PINKY", "HAND"]
-    motion = ["CURL", "SLOW FOLD", "FAST FOLD"] 
+    # motion = ["CURL", "SLOW FOLD", "FAST FOLD"] 
+    # motion = ["FOLD", "RELEASE"] 
     """
     Motion definitions:
     CURL: roll finger into a ball by bending ALL joints on the finger.
@@ -46,27 +47,33 @@ def main():
     board.start_stream()
     print("STARTING STREAM")
 
-    for j in range(len(fingers)):
-        print(fingers[j] + ":")
-        for i in range(count_time)[::-1]:
-            print(i+1) 
-            if i == 0: # to insert marker just before the motion is peformed
-                time.sleep(0.9)
-                # come up with a more comprehensive marker system, suitable for different combinations of fingers and motions
-                board.insert_marker(j+1)
-                time.sleep(0.1)
-            else:
-                time.sleep(1)
-        print("[ACTION]" + "\n") 
-        
-        time.sleep(wait_time)
+    for j in range(len(fingers)): # loop over fingers
+        for k in range(2): # how many times per action
+            print(fingers[j] + ":")
+            for i in range(count_time)[::-1]:
+                print(i+1) 
+                if i == 0: # to insert marker just before the motion is peformed
+                    time.sleep(0.9)
+                    # come up with a more comprehensive marker system, suitable for different combinations of fingers and motions
+                    board.insert_marker((j+1)*4)
+                    print("action marker")
+                    time.sleep(0.1)
+                else:
+                    time.sleep(1)
+            print("[ACTION]" + "\n") 
+            time.sleep(0.9)
+            board.insert_marker((j+1)*3-1)
+            print("return marker")
+            time.sleep(0.1)
+            print("[RETURN]")
+            time.sleep(wait_time)
 
 
     
     data = board.get_board_data()
 
 
-    df = pd.DataFrame(data=data.T, columns=['Sample', 'Ch. 1', 'Ch. 2', 'Ch. 3', 'Ch. 4', '?1', '?2', '?3', '?4', '?5', '?6', '?7', '?8', 'Time', 'Marker'])
+    df = pd.DataFrame(data=data.T, columns=['Packet', 'Ch. 1', 'Ch. 2', 'Ch. 3', 'Ch. 4', '?1', '?2', '?3', '?4', '?5', '?6', '?7', '?8', 'Time', 'Marker'])
 
 
     # write data to file
