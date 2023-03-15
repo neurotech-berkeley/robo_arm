@@ -10,6 +10,60 @@ from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds, Brai
 from brainflow.data_filter import DataFilter
 import ipdb
 
+
+
+def countdown(sec):
+    "Delay by SEC and display countdown by second."
+    for s in range(count_time)[::-1]:
+        print(s+1)
+        time.sleep(1)
+
+"""
+EXPERIMENTS GO HERE
+"""
+def collect_basic_fingers(board, wait_time, count_time, fingers):
+    for j in range(len(fingers)): # loop over fingers
+        for k in range(2): # how many times per action
+            print(fingers[j] + ":")
+            for i in range(count_time)[::-1]:
+                print(i+1) 
+                if i == 0: # to insert marker just before the motion is peformed
+                    time.sleep(0.9)
+                    # come up with a more comprehensive marker system, suitable for different combinations of fingers and motions
+                    board.insert_marker((j+1)*4)
+                    print("action marker")
+                    time.sleep(0.1)
+                else:
+                    time.sleep(1)
+            print("[ACTION]" + "\n") 
+            time.sleep(0.9)
+            board.insert_marker((j+1)*3-1)
+            print("return marker")
+            time.sleep(0.1)
+            print("[RETURN]")
+            time.sleep(wait_time)
+
+def collect_grasps(board, wait_time=5, trials=10):
+    labels = np.empty(0) # my own labels, in addition to system markers
+    print("Relax your hand in...")
+    countdown(wait_time)
+    grasp = 0
+    
+    for i in range(trials*2):
+        prompt = "Grasp for:" if grasp else "Relax for"
+        print(prompt)
+        board.insert_marker(3.141)
+        countdown(wait_time)
+        board.insert_marker(6.282)
+        sample_size = wait_time * 200
+        np.append(labels, (np.ones(sample_size) if grasp else np.zeros(sample_size)))
+        grasp = not grasp
+
+    return labels
+        
+
+
+
 def main():
     
     # PARAMETERS
@@ -47,27 +101,9 @@ def main():
     board.start_stream()
     print("STARTING STREAM")
 
-    for j in range(len(fingers)): # loop over fingers
-        for k in range(2): # how many times per action
-            print(fingers[j] + ":")
-            for i in range(count_time)[::-1]:
-                print(i+1) 
-                if i == 0: # to insert marker just before the motion is peformed
-                    time.sleep(0.9)
-                    # come up with a more comprehensive marker system, suitable for different combinations of fingers and motions
-                    board.insert_marker((j+1)*4)
-                    print("action marker")
-                    time.sleep(0.1)
-                else:
-                    time.sleep(1)
-            print("[ACTION]" + "\n") 
-            time.sleep(0.9)
-            board.insert_marker((j+1)*3-1)
-            print("return marker")
-            time.sleep(0.1)
-            print("[RETURN]")
-            time.sleep(wait_time)
 
+
+    grasp_labels = collect_grasps(board, wait_time=5, trials=10)
 
     
     data = board.get_board_data()
@@ -75,7 +111,7 @@ def main():
 
     df = pd.DataFrame(data=data.T, columns=['Packet', 'Ch. 1', 'Ch. 2', 'Ch. 3', 'Ch. 4', '?1', '?2', '?3', '?4', '?5', '?6', '?7', '?8', 'Time', 'Marker'])
 
-
+    df['labels'] = grasp_labels
     # write data to file
     outdir = "./data/"
     if not os.path.exists(outdir):
