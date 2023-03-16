@@ -8,11 +8,10 @@ from datetime import datetime
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds, BrainFlowPresets
 from brainflow.data_filter import DataFilter
-import ipdb
 
 def countdown(sec):
     "Delay by SEC and display countdown by second."
-    for s in range(count_time)[::-1]:
+    for s in range(sec)[::-1]:
         print(s+1)
         time.sleep(1)
 
@@ -28,7 +27,10 @@ def collect_and_average(board, duration, preptime=3, channel=4, message="Calibra
     channel_data = data[channel]
     average = np.array(channel_data).mean()
     
+    print(average)
+
     return average
+
 
 
 if __name__ == "__main__":
@@ -82,7 +84,9 @@ if __name__ == "__main__":
 
         resting_avg = collect_and_average(board, 8, preptime=3, channel=4, message="RESTING CALIBRATION: Put your arm at rest in:")
         grasp_avg = collect_and_average(board, 8, preptime=3, channel=4, message="GRASPING CALIBRATION: START GRASPING in:")
-        threshold = (resting_avg + grasp_avg) / 2 # add alpha
+        
+        alpha = 0.9
+        threshold = resting_avg + (grasp_avg - resting_avg) * alpha # add alpha
 
         """
         CLASSIFICATION:
@@ -106,7 +110,7 @@ if __name__ == "__main__":
 
         """
         while True:
-            sample_size = 26 # because humans' perception of real time is 13ms, and sample rate is 200Hz
+            sample_size = 26 # might need to increase this
             new_data = board.get_current_board_data(26)
             channel_data = np.array(new_data[4])
             level = channel_data.mean()
