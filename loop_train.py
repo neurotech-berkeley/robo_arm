@@ -110,6 +110,7 @@ if __name__ == "__main__":
 
         """
         # list of epoch testing accuracies
+        import pywt
         while True:
             ######################
             #      TRAINING      #
@@ -126,7 +127,9 @@ if __name__ == "__main__":
             # pass into model -> train
                 # if first time, initialize model
                 # else, deserialize model
-
+            # data = data_loader
+            # model = RNN()
+            # train_loop()
             # serialize model / save checkpoint
             serialize(model)
 
@@ -142,9 +145,59 @@ if __name__ == "__main__":
                 # same wavelet preprocessing
 
                 # model.predict
+            n_trials = 20
+            chan_mask = [3, 4, 5, 6]
+            finger = "MIDDLE"
+            sample_size = 500 # 2.5 seconds
+            sampling_period = 1 # seconds
+            comp_delays = []
+            sleep_delays = []
+            for n in range(n_trials):
+                # coin flip
+                control = True
+                if control:
+                    print("flex something else in:")
+                    label = 0
+                    
+                else: 
+                    print("FLEX " + finger)
+                    label = 1
+                start_time = time.time()
 
+                # keep test data size constant 
+                test_data = board.get_current_board_data(sample_size) # removes from ringbuffer
+                # get specified channels 
+                test_data = np.array(test_data[chan_mask]) 
+                
+                # shape -> (chn * sample_size / 2) 
+                coef_ca, coef_cd = pywt.dwt(test_data, "db1", mode="per", axis=-1) 
+                
+                assert coef_ca.shape == coef_cd.shape
+                assert coef_ca.shape[0] == len(chan_mask) 
+                
+                # classifier
+                # res -> (chn)
+                i = np.random.rand(coef_ca.shape[1])
+                res = np.dot(coef_ca, i)
 
+                end_time = time.time()
+                # computation latency
+                # store latecy
+                # compute average
+                comp_delay = end_time - start_time
+                print(f"Execusion time: {comp_delay}")
 
+                # threshold and report
+                print(res > threshold)
+
+                # sampling latency
+                print(f"Delay for: {sampling_period}")
+                sleep_start = time.time()
+                time.sleep(sampling_period)
+                sleep_end = time.time()
+                sleep_delay = sleep_end - sleep_start
+                sleep_delays.append(sleep_delay)
+                comp_delays.append(comp_delay)
             
             # compute_accuracy()
 
